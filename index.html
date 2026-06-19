@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>奉仕記録</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -40,14 +40,14 @@
         <label>メモ<input id="baselineNote" placeholder="例 9月〜6月18日まで"></label>
       </div>
       <h3>通常奉仕</h3>
-      <div class="grid two">
-        <label>時間<input id="baselineServiceHours" type="number" min="0" inputmode="numeric"></label>
-        <label>分<input id="baselineServiceMinutes" type="number" min="0" max="59" inputmode="numeric"></label>
+      <div class="baseline-time">
+        <label>時間<div class="stepper"><button type="button" data-step="baselineServiceHours" data-delta="-1">−</button><input id="baselineServiceHours" type="number" min="0" inputmode="numeric"><button type="button" data-step="baselineServiceHours" data-delta="1">＋</button></div></label>
+        <label>分<div class="stepper"><button type="button" data-step="baselineServiceMinutes" data-delta="-10">−10</button><input id="baselineServiceMinutes" type="number" min="0" max="59" inputmode="numeric"><button type="button" data-step="baselineServiceMinutes" data-delta="10">＋10</button></div></label>
       </div>
       <h3>付加的奉仕</h3>
-      <div class="grid two">
-        <label>時間<input id="baselineExtraHours" type="number" min="0" inputmode="numeric"></label>
-        <label>分<input id="baselineExtraMinutes" type="number" min="0" max="59" inputmode="numeric"></label>
+      <div class="baseline-time">
+        <label>時間<div class="stepper"><button type="button" data-step="baselineExtraHours" data-delta="-1">−</button><input id="baselineExtraHours" type="number" min="0" inputmode="numeric"><button type="button" data-step="baselineExtraHours" data-delta="1">＋</button></div></label>
+        <label>分<div class="stepper"><button type="button" data-step="baselineExtraMinutes" data-delta="-10">−10</button><input id="baselineExtraMinutes" type="number" min="0" max="59" inputmode="numeric"><button type="button" data-step="baselineExtraMinutes" data-delta="10">＋10</button></div></label>
       </div>
       <div class="grid two">
         <label>再訪問件数<input id="baselineReturnVisits" type="number" min="0" inputmode="numeric"></label>
@@ -81,12 +81,12 @@
     </form>
   </section>
   <section id="history" class="view"><div class="panel"><h2>記録履歴</h2><input id="historySearch" placeholder="検索"><div id="historyList"></div></div></section>
-  <section id="library" class="view"><div class="panel"><h2>出版物・動画</h2><div class="tabs small"><button class="lib-tab active" data-lib="favorite">★ よく使う</button><button class="lib-tab" data-lib="recent">最近使った</button><button class="lib-tab" data-lib="all">すべて</button></div><div id="libraryGrid" class="item-grid"></div></div></section>
+  <section id="library" class="view"><div class="panel"><h2>出版物・動画</h2><div class="tabs small"><button class="lib-tab active" data-lib="favorite">★ よく使う</button><button class="lib-tab" data-lib="recent">最近使った</button><button class="lib-tab" data-lib="all">すべて</button></div><div id="libraryGrid" class="item-grid"></div><p class="asset-note">サムネイルが出ない時は、assets フォルダごとアップロードされているか確認してください。</p></div></section>
   <section id="map" class="view"><div class="panel"><h2>再訪問マップ</h2><div class="grid three"><label>区域<input id="mapTerritory" placeholder="125"></label><label>ブロック<select id="mapBlock"><option value="">全て</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></label><label>ステータス<select id="mapStatus"><option value="">全て</option><option>関心あり</option><option>再訪問予定</option><option>レッスン中</option><option>保留</option><option>終了</option></select></label></div><div id="mapCanvas"></div><div id="rvList"></div></div></section>
   <section id="stats" class="view"><div class="panel"><h2>集計</h2><div id="statsContent"></div></div></section>
 </main>
 <dialog id="picker"><div class="picker-head"><h2 id="pickerTitle">選択</h2><button id="closePicker" class="ghost">閉じる</button></div><input id="pickerSearch" placeholder="検索"><div class="tabs small"><button class="picker-tab active" data-filter="favorite">★ よく使う</button><button class="picker-tab" data-filter="recent">最近使った</button><button class="picker-tab" data-filter="all">すべて</button></div><div id="pickerGrid" class="item-grid"></div></dialog>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
