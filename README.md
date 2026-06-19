@@ -1,0 +1,1 @@
+# naoto-hata-naoto-hata-ministry-hub
