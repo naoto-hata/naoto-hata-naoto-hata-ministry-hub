@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>奉仕記録</title>
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#2563eb" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,7 +12,7 @@
 <body>
 <header class="app-header">
   <div><h1>奉仕記録</h1><p>時間・区域・配布物・動画・再訪問マップ</p></div>
-  <div class="top-actions"><button id="exportCsvBtn" class="ghost">CSV</button><button id="exportBtn" class="ghost">バックアップ</button></div>
+  <div class="top-actions"><button id="exportCsvBtn" class="ghost">CSV</button><button id="importBtn" class="ghost">復元</button><button id="exportBtn" class="ghost">バックアップ</button><input id="importFile" type="file" accept="application/json" hidden></div>
 </header>
 <main>
   <section class="dashboard cards">
@@ -70,7 +70,7 @@
         <label>区域 #3桁<input id="territory" maxlength="3" inputmode="numeric" placeholder="例 125"></label>
         <label>ブロック<select id="block"><option value="">なし</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></label>
       </div>
-      <div class="time-box"><button type="button" id="minus10">−10分</button><strong id="timeDisplay">0:30</strong><button type="button" id="plus10">＋10分</button></div>
+      <div class="time-box"><button type="button" id="minus10">−10分</button><strong id="timeDisplay">0:00</strong><button type="button" id="plus10">＋10分</button></div>
       <div class="grid two"><label>名前・ニックネーム<input id="contactName" placeholder="例 山田さん"></label><label>住宅名・部屋番号<input id="building" placeholder="例 サンハイツ203"></label></div>
       <div class="location-box"><label>住所<input id="address" placeholder="現在地から取得、または手入力"></label><div class="button-row"><button type="button" id="locateBtn">📍 現在地から住所入力</button><button type="button" id="openMapBtn" class="ghost">Google Mapで開く</button></div><input type="hidden" id="lat"><input type="hidden" id="lng"></div>
       <div class="grid two"><label>再訪問ステータス<select id="rvStatus"><option>関心あり</option><option>再訪問予定</option><option>レッスン中</option><option>保留</option><option>終了</option></select></label><label>次回予定日<input type="date" id="nextDate"></label></div>
@@ -111,7 +111,7 @@
     </div>
   </section>
   <section id="history" class="view"><div class="panel"><h2>記録履歴</h2><input id="historySearch" placeholder="検索"><div id="historyList"></div></div></section>
-  <section id="library" class="view"><div class="panel"><h2>出版物・動画</h2><div class="tabs small"><button class="lib-tab active" data-lib="favorite">★ よく使う</button><button class="lib-tab" data-lib="recent">最近使った</button><button class="lib-tab" data-lib="all">すべて</button></div><div id="libraryGrid" class="item-grid"></div><p class="asset-note">サムネイルが出ない時は、assets フォルダごとアップロードされているか確認してください。</p></div></section>
+  <section id="library" class="view"><div class="panel"><h2>出版物・動画</h2><div class="tabs small"><button class="lib-tab active" data-lib="favorite">★ よく使う</button><button class="lib-tab" data-lib="recent">最近使った</button><button class="lib-tab" data-lib="all">すべて</button></div><div id="libraryGrid" class="item-grid"></div><p class="asset-note">サムネイルはアプリ内に埋め込み済みです。タイトルと画像の対応を確認済みです。</p></div></section>
   <section id="map" class="view"><div class="panel"><h2>再訪問マップ</h2><div class="grid three"><label>区域<input id="mapTerritory" placeholder="125"></label><label>ブロック<select id="mapBlock"><option value="">全て</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></label><label>ステータス<select id="mapStatus"><option value="">全て</option><option>関心あり</option><option>再訪問予定</option><option>レッスン中</option><option>保留</option><option>終了</option></select></label></div><div id="mapCanvas"></div><div id="rvList"></div></div></section>
   <section id="stats" class="view"><div class="panel"><h2>集計</h2><div id="statsContent"></div></div></section>
 </main>
@@ -120,6 +120,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-<script src="app.js?v=9"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>
