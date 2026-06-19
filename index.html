@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>奉仕記録</title>
+  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+<header class="app-header">
+  <div><h1>奉仕記録</h1><p>時間・区域・配布物・動画・再訪問マップ</p></div>
+  <div class="top-actions"><button id="exportCsvBtn" class="ghost">CSV</button><button id="exportBtn" class="ghost">バックアップ</button></div>
+</header>
+<main>
+  <section class="dashboard cards">
+    <div class="card"><span>今月の通常奉仕</span><strong id="monthService">0:00</strong></div>
+    <div class="card"><span>付加的奉仕</span><strong id="monthExtra">0:00</strong></div>
+    <div class="card"><span>合計</span><strong id="monthTotal">0:00</strong></div>
+    <div class="card"><span>再訪問地点</span><strong id="rvCount">0</strong></div>
+  </section>
+  <nav class="tabs">
+    <button class="tab active" data-view="record">記録</button>
+    <button class="tab" data-view="history">履歴</button>
+    <button class="tab" data-view="library">出版物・動画</button>
+    <button class="tab" data-view="map">再訪問マップ</button>
+    <button class="tab" data-view="stats">集計</button>
+  </nav>
+  <section id="record" class="view active">
+    <form id="recordForm" class="panel">
+      <input type="hidden" id="editingId">
+      <h2 id="formTitle">今日の記録</h2>
+      <div class="grid two">
+        <label>日付<input type="date" id="date" required></label>
+        <label>奉仕区分<select id="activityType"><option value="戸別">戸別</option><option value="カート">カート</option><option value="手紙">手紙</option><option value="電話">電話</option><option value="Zoom">Zoom</option><option value="再訪問">再訪問</option><option value="聖書レッスン">聖書レッスン</option><option value="王国会館メンテナンス" data-extra="true">王国会館メンテナンス</option><option value="大会奉仕" data-extra="true">大会奉仕</option><option value="災害支援" data-extra="true">災害支援</option><option value="その他付加的奉仕" data-extra="true">その他付加的奉仕</option></select></label>
+        <label>区域 #3桁<input id="territory" maxlength="3" inputmode="numeric" placeholder="例 125"></label>
+        <label>ブロック<select id="block"><option value="">なし</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></label>
+      </div>
+      <div class="time-box"><button type="button" id="minus10">−10分</button><strong id="timeDisplay">0:30</strong><button type="button" id="plus10">＋10分</button></div>
+      <div class="grid two"><label>名前・ニックネーム<input id="contactName" placeholder="例 山田さん"></label><label>住宅名・部屋番号<input id="building" placeholder="例 サンハイツ203"></label></div>
+      <div class="location-box"><label>住所<input id="address" placeholder="現在地から取得、または手入力"></label><div class="button-row"><button type="button" id="locateBtn">📍 現在地から住所入力</button><button type="button" id="openMapBtn" class="ghost">Google Mapで開く</button></div><input type="hidden" id="lat"><input type="hidden" id="lng"></div>
+      <div class="grid two"><label>再訪問ステータス<select id="rvStatus"><option>関心あり</option><option>再訪問予定</option><option>レッスン中</option><option>保留</option><option>終了</option></select></label><label>次回予定日<input type="date" id="nextDate"></label></div>
+      <label class="check"><input type="checkbox" id="saveReturnVisit"> 再訪問地点に登録</label>
+      <h3>関心テーマ</h3><div class="chips"><label><input type="checkbox" name="topic" value="家族">家族</label><label><input type="checkbox" name="topic" value="健康">健康</label><label><input type="checkbox" name="topic" value="老後">老後</label><label><input type="checkbox" name="topic" value="聖書">聖書</label><label><input type="checkbox" name="topic" value="世界情勢">世界情勢</label><label><input type="checkbox" name="topic" value="死者の復活">死者の復活</label><label><input type="checkbox" name="topic" value="神の王国">神の王国</label></div>
+      <h3>配布物</h3><div id="selectedPubs" class="selected-list"></div><button type="button" class="ghost" data-open-picker="publication">＋ 配布物を追加</button>
+      <h3>動画</h3><div id="selectedVideos" class="selected-list"></div><button type="button" class="ghost" data-open-picker="video">＋ 動画を追加</button>
+      <div class="grid two"><label>再訪問件数<input id="returnVisits" type="number" min="0" value="0"></label><label>レッスン件数<input id="studies" type="number" min="0" value="0"></label></div>
+      <label>メモ<textarea id="memo" rows="3" placeholder="会話・次回予定など"></textarea></label>
+      <button class="primary" id="saveBtn" type="submit">保存</button><button class="ghost" id="cancelEditBtn" type="button" hidden>編集をキャンセル</button>
+    </form>
+  </section>
+  <section id="history" class="view"><div class="panel"><h2>記録履歴</h2><input id="historySearch" placeholder="検索"><div id="historyList"></div></div></section>
+  <section id="library" class="view"><div class="panel"><h2>出版物・動画</h2><div class="tabs small"><button class="lib-tab active" data-lib="favorite">★ よく使う</button><button class="lib-tab" data-lib="recent">最近使った</button><button class="lib-tab" data-lib="all">すべて</button></div><div id="libraryGrid" class="item-grid"></div></div></section>
+  <section id="map" class="view"><div class="panel"><h2>再訪問マップ</h2><div class="grid three"><label>区域<input id="mapTerritory" placeholder="125"></label><label>ブロック<select id="mapBlock"><option value="">全て</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></label><label>ステータス<select id="mapStatus"><option value="">全て</option><option>関心あり</option><option>再訪問予定</option><option>レッスン中</option><option>保留</option><option>終了</option></select></label></div><div id="mapCanvas"></div><div id="rvList"></div></div></section>
+  <section id="stats" class="view"><div class="panel"><h2>集計</h2><div id="statsContent"></div></div></section>
+</main>
+<dialog id="picker"><div class="picker-head"><h2 id="pickerTitle">選択</h2><button id="closePicker" class="ghost">閉じる</button></div><input id="pickerSearch" placeholder="検索"><div class="tabs small"><button class="picker-tab active" data-filter="favorite">★ よく使う</button><button class="picker-tab" data-filter="recent">最近使った</button><button class="picker-tab" data-filter="all">すべて</button></div><div id="pickerGrid" class="item-grid"></div></dialog>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js?v=3"></script>
+</body>
+</html>
