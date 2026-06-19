@@ -8,3 +8,5 @@
 .thumb img{width:100%;height:100%;object-fit:contain;display:block}
 .selected-row .thumb.mini,.thumb.mini{height:48px;width:52px;min-width:52px}
 .item{overflow:hidden}
+
+.sync-status{padding:12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;margin:10px 0;font-weight:700}.firebase-box{margin-top:12px}.firebase-box textarea{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}.small-primary{width:auto;margin-top:0}.asset-note{display:none}

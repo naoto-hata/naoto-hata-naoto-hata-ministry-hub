@@ -12,9 +12,54 @@ const safe = (s='') => String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;',
 let state = JSON.parse(localStorage.getItem('ministryHubV3') || localStorage.getItem('serviceApp') || '{}');
 state.records ||= []; state.favorites ||= Object.fromEntries(MASTER.filter(x=>x.favorite).map(x=>[x.id,true])); state.recent ||= [];
 state.baseline ||= {start:'2025-09-01', note:'2025年9月〜添付スクショ分', serviceMinutes:403*60+5, extraMinutes:0, returnVisits:0, studies:0};
-let minutes=30, selected={publication:{},video:{}}, pickerKind='publication', pickerFilter='favorite', libFilter='favorite';
-function persist(){localStorage.setItem('ministryHubV3',JSON.stringify(state));}
+let minutes=0, selected={publication:{},video:{}}, pickerKind='publication', pickerFilter='favorite', libFilter='favorite';
+function normalizeState(obj){ obj ||= {}; obj.records ||= []; obj.favorites ||= Object.fromEntries(MASTER.filter(x=>x.favorite).map(x=>[x.id,true])); obj.recent ||= []; obj.baseline ||= state?.baseline || {start: serviceYearStart(), serviceMinutes:403*60+5, extraMinutes:0, returnVisits:0, studies:0, note:'9月〜アプリ開始前'}; return obj; }
+function persistLocalOnly(){localStorage.setItem('ministryHubV3',JSON.stringify(state));}
+function persist(){persistLocalOnly(); queueCloudSave();}
 function save(){persist(); renderAll();}
+
+const FIREBASE_CONFIG_KEY='ministryHubFirebaseConfig';
+let cloudUser=null, cloudDb=null, cloudAuth=null, cloudUnsub=null, cloudSaveTimer=null, cloudSaving=false;
+function mergeState(local, remote){
+  local=normalizeState(local||{}); remote=normalizeState(remote||{});
+  const records=new Map(); [...(remote.records||[]), ...(local.records||[])].forEach(r=>{ if(r&&r.id) records.set(r.id,r); });
+  const favorites={...(remote.favorites||{}), ...(local.favorites||{})};
+  const recent=[...(local.recent||[]), ...(remote.recent||[])].filter((v,i,a)=>v&&a.indexOf(v)===i).slice(0,50);
+  const lm=(local.baseline?.serviceMinutes||0)+(local.baseline?.extraMinutes||0);
+  const rm=(remote.baseline?.serviceMinutes||0)+(remote.baseline?.extraMinutes||0);
+  const baseline= lm>=rm ? local.baseline : remote.baseline;
+  return normalizeState({...remote, ...local, records:[...records.values()], favorites, recent, baseline});
+}
+function firebaseConfigTextToObject(txt){
+  txt=(txt||'').trim(); if(!txt) throw new Error('Firebase設定が空です');
+  txt=txt.replace(/^const\s+firebaseConfig\s*=\s*/, '').replace(/;\s*$/, '');
+  try{return JSON.parse(txt)}catch(e){ return Function('return ('+txt+')')(); }
+}
+function getSavedFirebaseConfig(){ try{return JSON.parse(localStorage.getItem(FIREBASE_CONFIG_KEY)||'null')}catch{return null} }
+function setSyncStatus(msg){ let el=$('#syncStatus'); if(el) el.textContent=msg; }
+function queueCloudSave(){ if(!cloudDb||!cloudUser||cloudSaving) return; clearTimeout(cloudSaveTimer); cloudSaveTimer=setTimeout(saveCloudNow,700); }
+async function saveCloudNow(){ if(!cloudDb||!cloudUser) return; cloudSaving=true; try{ await cloudDb.collection('users').doc(cloudUser.uid).collection('apps').doc('ministryHub').set({state, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); setSyncStatus('同期済み：'+(cloudUser.email||cloudUser.displayName||'Googleアカウント')); }catch(e){ console.error(e); setSyncStatus('同期エラー：'+e.message); } finally{ cloudSaving=false; } }
+async function initFirebaseApp(config){
+  if(!window.firebase){ setSyncStatus('Firebaseライブラリを読み込めませんでした'); return; }
+  try{ if(!firebase.apps.length) firebase.initializeApp(config); cloudAuth=firebase.auth(); cloudDb=firebase.firestore(); setSyncStatus('Firebase設定済み。Googleでログインしてください。');
+    cloudAuth.onAuthStateChanged(async user=>{ cloudUser=user; const login=$('#googleLoginBtn'), logout=$('#googleLogoutBtn'); if(login) login.hidden=!!user; if(logout) logout.hidden=!user; if(cloudUnsub){cloudUnsub(); cloudUnsub=null;}
+      if(!user){ setSyncStatus('未ログイン。端末内には保存されています。'); return; }
+      setSyncStatus('クラウド確認中…'); const ref=cloudDb.collection('users').doc(user.uid).collection('apps').doc('ministryHub');
+      const snap=await ref.get(); if(snap.exists && snap.data()?.state){ state=mergeState(state, snap.data().state); persistLocalOnly(); renderAll(); }
+      await saveCloudNow();
+      cloudUnsub=ref.onSnapshot(doc=>{ if(cloudSaving) return; const remote=doc.data()?.state; if(remote){ state=normalizeState(remote); persistLocalOnly(); renderAll(); setSyncStatus('同期済み：'+(user.email||user.displayName||'Googleアカウント')); } });
+    });
+  }catch(e){ console.error(e); setSyncStatus('Firebase設定エラー：'+e.message); }
+}
+function initSyncUi(){
+  const saved=getSavedFirebaseConfig(); if($('#firebaseConfigInput') && saved) $('#firebaseConfigInput').value=JSON.stringify(saved,null,2);
+  if(saved) initFirebaseApp(saved); else setSyncStatus('未設定。Firebase設定を保存してください。');
+  if($('#saveFirebaseConfigBtn')) $('#saveFirebaseConfigBtn').onclick=()=>{ try{ const cfg=firebaseConfigTextToObject($('#firebaseConfigInput').value); localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(cfg)); alert('Firebase設定を保存しました'); location.reload(); }catch(e){ alert('設定を読み取れません：'+e.message); } };
+  if($('#googleLoginBtn')) $('#googleLoginBtn').onclick=()=>{ if(!cloudAuth){alert('先にFirebase設定を保存してください'); return;} cloudAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>alert('ログインできません：'+e.message)); };
+  if($('#googleLogoutBtn')) $('#googleLogoutBtn').onclick=()=> cloudAuth?.signOut();
+  if($('#cloudUploadBtn')) $('#cloudUploadBtn').onclick=()=> saveCloudNow();
+}
+
 function fmt(m){m=+m||0; return `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`}
 function serviceYearStart(){let d=new Date(); let y=d.getMonth()>=8 ? d.getFullYear() : d.getFullYear()-1; return `${y}-09-01`;}
 function inServiceYear(r){let start=(state.baseline&&state.baseline.start)||serviceYearStart(); return (r.date||'')>=start;}
@@ -40,9 +85,9 @@ function renderMap(){let list=$('#rvList'); if(!list) return; let pts=filteredMa
 function loadBaselineForm(){ if(!$('#baselineStart')) return; let b=state.baseline||{}; let sm=splitMinutes(b.serviceMinutes), em=splitMinutes(b.extraMinutes); $('#baselineStart').value=b.start||serviceYearStart(); $('#baselineNote').value=b.note||''; $('#baselineServiceHours').value=sm.h; $('#baselineServiceMinutes').value=sm.min; $('#baselineExtraHours').value=em.h; $('#baselineExtraMinutes').value=em.min; $('#baselineReturnVisits').value=b.returnVisits||0; $('#baselineStudies').value=b.studies||0; }
 function saveBaselineForm(){ let b={start:$('#baselineStart').value||serviceYearStart(), note:$('#baselineNote').value||'', serviceMinutes:(+$('#baselineServiceHours').value||0)*60+(+$('#baselineServiceMinutes').value||0), extraMinutes:(+$('#baselineExtraHours').value||0)*60+(+$('#baselineExtraMinutes').value||0), returnVisits:+$('#baselineReturnVisits').value||0, studies:+$('#baselineStudies').value||0}; state.baseline=b; save(); alert('奉仕年度累計を保存しました'); }
 function renderAll(){renderDash();renderLibrary();renderHistory();renderStats();loadBaselineForm(); if($('#map')?.classList.contains('active')) renderMap();}
-function clearForm(){selected={publication:{},video:{}}; $('#recordForm').reset(); $('#date').value=new Date().toISOString().slice(0,10); minutes=30; $('#timeDisplay').textContent=fmt(minutes); $('#editingId').value=''; $('#formTitle').textContent='今日の記録'; $('#saveBtn').textContent='保存'; $('#cancelEditBtn').hidden=true; renderSelected('publication'); renderSelected('video');}
+function clearForm(){selected={publication:{},video:{}}; $('#recordForm').reset(); $('#date').value=new Date().toISOString().slice(0,10); minutes=0; $('#timeDisplay').textContent=fmt(minutes); $('#editingId').value=''; $('#formTitle').textContent='今日の記録'; $('#saveBtn').textContent='保存'; $('#cancelEditBtn').hidden=true; renderSelected('publication'); renderSelected('video');}
 function fillForm(r){$('#editingId').value=r.id; $('#date').value=r.date||''; $('#activityType').value=r.activityType||'戸別'; $('#territory').value=r.territory||''; $('#block').value=r.block||''; minutes=+r.minutes||0; $('#timeDisplay').textContent=fmt(minutes); $('#contactName').value=r.contactName||''; $('#building').value=r.building||''; $('#address').value=r.address||''; $('#lat').value=r.lat||''; $('#lng').value=r.lng||''; $('#rvStatus').value=r.rvStatus||'関心あり'; $('#nextDate').value=r.nextDate||''; $('#saveReturnVisit').checked=!!r.returnVisitPoint; $$('input[name="topic"]').forEach(x=>x.checked=(r.topics||[]).includes(x.value)); selected={publication:{...(r.publications||{})}, video:{...(r.videos||{})}}; $('#returnVisits').value=r.returnVisits||0; $('#studies').value=r.studies||0; $('#memo').value=r.memo||''; $('#formTitle').textContent='記録を編集'; $('#saveBtn').textContent='更新'; $('#cancelEditBtn').hidden=false; renderSelected('publication'); renderSelected('video'); document.querySelector('[data-view="record"]').click(); window.scrollTo({top:0,behavior:'smooth'});}
-function init(){ $('#date').value=new Date().toISOString().slice(0,10); $('#timeDisplay').textContent=fmt(minutes); $('#plus10').onclick=()=>{minutes+=10; $('#timeDisplay').textContent=fmt(minutes)}; $('#minus10').onclick=()=>{minutes=Math.max(0,minutes-10); $('#timeDisplay').textContent=fmt(minutes)};
+function init(){ initSyncUi(); if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});} $('#date').value=new Date().toISOString().slice(0,10); $('#timeDisplay').textContent=fmt(minutes); $('#plus10').onclick=()=>{minutes+=10; $('#timeDisplay').textContent=fmt(minutes)}; $('#minus10').onclick=()=>{minutes=Math.max(0,minutes-10); $('#timeDisplay').textContent=fmt(minutes)};
  $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.view').forEach(v=>v.classList.remove('active'));$('#'+b.dataset.view).classList.add('active'); renderAll();});
  $$('[data-open-picker]').forEach(b=>b.onclick=()=>{pickerKind=b.dataset.openPicker; $('#pickerTitle').textContent=pickerKind==='publication'?'配布物を追加':'動画を追加'; $('#pickerSearch').value=''; $('#picker').showModal(); renderPicker();});
  $('#closePicker').onclick=()=>$('#picker').close(); $('#pickerSearch').oninput=renderPicker; $('#historySearch').oninput=renderHistory; ['#mapTerritory','#mapBlock','#mapStatus'].forEach(s=>$(s).oninput=renderMap);

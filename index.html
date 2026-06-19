@@ -4,7 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>奉仕記録</title>
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -25,6 +27,7 @@
   <nav class="tabs">
     <button class="tab active" data-view="record">記録</button>
     <button class="tab" data-view="baseline">奉仕年度</button>
+    <button class="tab" data-view="sync">同期</button>
     <button class="tab" data-view="history">履歴</button>
     <button class="tab" data-view="library">出版物・動画</button>
     <button class="tab" data-view="map">再訪問マップ</button>
@@ -80,6 +83,33 @@
       <button class="primary" id="saveBtn" type="submit">保存</button><button class="ghost" id="cancelEditBtn" type="button" hidden>編集をキャンセル</button>
     </form>
   </section>
+
+  <section id="sync" class="view">
+    <div class="panel">
+      <h2>スマホ・PC同期</h2>
+      <p class="muted">GoogleログインでFirebaseに同期します。今この端末に入っている記録は、初回ログイン時にクラウドへ引き継がれます。</p>
+      <div id="syncStatus" class="sync-status">未設定</div>
+      <div class="button-row">
+        <button type="button" id="googleLoginBtn" class="primary small-primary">Googleでログイン</button>
+        <button type="button" id="googleLogoutBtn" class="ghost" hidden>ログアウト</button>
+        <button type="button" id="cloudUploadBtn" class="ghost">この端末のデータをクラウドへ保存</button>
+      </div>
+      <details class="firebase-box">
+        <summary>Firebase設定</summary>
+        <p class="muted">FirebaseのWebアプリ設定を貼り付けて保存してください。例：{ apiKey: "...", authDomain: "...", projectId: "..." }</p>
+        <textarea id="firebaseConfigInput" rows="8" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...firebaseapp.com",
+  "projectId": "...",
+  "storageBucket": "...appspot.com",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+        <button type="button" id="saveFirebaseConfigBtn" class="ghost">Firebase設定を保存</button>
+      </details>
+      <p class="muted">※ Googleログインを使うには、Firebase側で Authentication の Googleプロバイダと Firestore Database を有効にしてください。</p>
+    </div>
+  </section>
   <section id="history" class="view"><div class="panel"><h2>記録履歴</h2><input id="historySearch" placeholder="検索"><div id="historyList"></div></div></section>
   <section id="library" class="view"><div class="panel"><h2>出版物・動画</h2><div class="tabs small"><button class="lib-tab active" data-lib="favorite">★ よく使う</button><button class="lib-tab" data-lib="recent">最近使った</button><button class="lib-tab" data-lib="all">すべて</button></div><div id="libraryGrid" class="item-grid"></div><p class="asset-note">サムネイルが出ない時は、assets フォルダごとアップロードされているか確認してください。</p></div></section>
   <section id="map" class="view"><div class="panel"><h2>再訪問マップ</h2><div class="grid three"><label>区域<input id="mapTerritory" placeholder="125"></label><label>ブロック<select id="mapBlock"><option value="">全て</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></label><label>ステータス<select id="mapStatus"><option value="">全て</option><option>関心あり</option><option>再訪問予定</option><option>レッスン中</option><option>保留</option><option>終了</option></select></label></div><div id="mapCanvas"></div><div id="rvList"></div></div></section>
@@ -87,6 +117,9 @@
 </main>
 <dialog id="picker"><div class="picker-head"><h2 id="pickerTitle">選択</h2><button id="closePicker" class="ghost">閉じる</button></div><input id="pickerSearch" placeholder="検索"><div class="tabs small"><button class="picker-tab active" data-filter="favorite">★ よく使う</button><button class="picker-tab" data-filter="recent">最近使った</button><button class="picker-tab" data-filter="all">すべて</button></div><div id="pickerGrid" class="item-grid"></div></dialog>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js?v=6"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>
