@@ -8,7 +8,7 @@ const MASTER_RAW = [
 ];
 
 
-const APP_VERSION = '2026.06.20-v11-person-master';
+const APP_VERSION = '2026.06.20-v12-repair-totals';
 const DEFAULT_FIREBASE_CONFIG = {
   apiKey: "AIzaSyBzxU5UV87QyxvvpaUVW9KSqYTzguJwGOQ",
   authDomain: "ministry-hub-app-da2c7.firebaseapp.com",
@@ -64,6 +64,38 @@ function persistLocalOnly(){localStorage.setItem('ministryHubV11',JSON.stringify
 function persist(){persistLocalOnly(); queueCloudSave();}
 function save(){persist(); renderAll();}
 function mergeState(local, remote){local=normalizeState(local||{}); remote=normalizeState(remote||{}); const records=new Map(); [...(remote.records||[]),...(local.records||[])].forEach(r=>{if(r&&r.id)records.set(r.id,normalizeRecord(r));}); const contacts=new Map(); [...(remote.contacts||[]),...(local.contacts||[])].forEach(c=>{if(c&&c.id)contacts.set(c.id,c);}); const favorites={...(remote.favorites||{}),...(local.favorites||{})}; const recent=[...(local.recent||[]),...(remote.recent||[])].filter((v,i,a)=>v&&a.indexOf(v)===i).slice(0,50); const lm=(local.baseline?.serviceMinutes||0)+(local.baseline?.extraMinutes||0); const rm=(remote.baseline?.serviceMinutes||0)+(remote.baseline?.extraMinutes||0); const baseline=lm>=rm?local.baseline:remote.baseline; return normalizeState({...remote,...local,records:[...records.values()],contacts:[...contacts.values()],favorites,recent,baseline});}
+
+function recordFingerprint(r){
+  r=normalizeRecord(r||{});
+  const c=state?.contacts?.find?.(x=>x.id===r.contactId)||{};
+  const person=[r.contactId||'', r.contactName||'', c.name||'', r.building||c.building||'', r.address||c.address||''].map(x=>String(x||'').trim()).join('|');
+  return [r.date,r.activityType,r.serviceMinutes,r.extraMinutes,r.territory,r.block,person,r.gender,r.ageBand,JSON.stringify(r.publications||{}),JSON.stringify(r.videos||{}),r.returnVisits,r.studies,String(r.memo||'').trim()].join('§');
+}
+function isEmptyRecord(r){
+  r=normalizeRecord(r||{});
+  return !r.serviceMinutes && !r.extraMinutes && !r.contactId && !r.contactName && !r.building && !r.address && !r.territory && !r.block && !r.memo && !r.returnVisits && !r.studies && !Object.keys(r.publications||{}).length && !Object.keys(r.videos||{}).length;
+}
+function cleanupDuplicates(){
+  state=normalizeState(state);
+  const seenId=new Set(), seenFp=new Set(), cleaned=[];
+  for(const r0 of state.records||[]){
+    const r=normalizeRecord(r0);
+    if(isEmptyRecord(r)) continue;
+    if(seenId.has(r.id)) continue;
+    const fp=recordFingerprint(r);
+    if(seenFp.has(fp)) continue;
+    seenId.add(r.id); seenFp.add(fp); cleaned.push(r);
+  }
+  state.records=cleaned;
+  state=normalizeState(state);
+}
+function repairKnownTotals(){
+  cleanupDuplicates();
+  state.baseline={...(state.baseline||{}),start:'2025-09-01',note:'2025年9月〜アプリ開始前（修正済み）',serviceMinutes:24000,extraMinutes:4140,returnVisits:0,studies:2};
+  state=normalizeState(state);
+  persist(); renderAll(); loadBaselineForm(); saveCloudNow();
+}
+
 function setSyncStatus(msg){let el=$('#syncStatus'); if(el) el.textContent=msg;}
 function firebaseConfigTextToObject(txt){txt=(txt||'').trim(); if(!txt) throw new Error('Firebase設定が空です'); txt=txt.replace(/^const\s+firebaseConfig\s*=\s*/, '').replace(/;\s*$/, ''); try{return JSON.parse(txt)}catch(e){return Function('return ('+txt+')')();}}
 function getSavedFirebaseConfig(){try{return JSON.parse(localStorage.getItem(FIREBASE_CONFIG_KEY)||'null')}catch{return null}}
@@ -111,7 +143,7 @@ function bindEvents(){
  $('#geocodeBtn').onclick=async()=>{let g=await geocodeAddress($('#address').value); if(g){$('#lat').value=g.lat; $('#lng').value=g.lng; if(!$('#address').value)$('#address').value=g.display; alert('住所から地図位置を取得しました');}else alert('住所から位置を取得できませんでした');};
  $('#openMapBtn').onclick=()=>{let q=$('#lat').value&&$('#lng').value?`${$('#lat').value},${$('#lng').value}`:encodeURIComponent($('#address').value); if(q)window.open(`https://www.google.com/maps/search/?api=1&query=${q}`,'_blank');};
  $('#recordForm').onsubmit=async e=>{e.preventDefault(); if($('#address').value&&!$('#lat').value){let g=await geocodeAddress($('#address').value); if(g){$('#lat').value=g.lat; $('#lng').value=g.lng;}} const contactId=upsertContactFromForm(); const rec={id:editingId||uid(),date:$('#date').value||today(),activityType:$('#activityType').value,serviceMinutes:minutes,extraMinutes,territory:$('#territory').value.trim().padStart($('#territory').value.trim()?3:0,'0'),block:$('#block').value,contactId,gender:$('#gender').value,ageBand:$('#ageBand').value,publications:{...selected.publication},videos:{...selected.video},returnVisits:+$('#returnVisits').value||0,studies:+$('#studies').value||0,memo:$('#memo').value.trim(),updatedAt:new Date().toISOString()}; if(editingId){let i=state.records.findIndex(r=>r.id===editingId); if(i>=0)state.records[i]=rec;} else state.records.push(rec); if(contactId){let c=state.contacts.find(x=>x.id===contactId); if(c){c.lastDate=rec.date; c.visitCount=state.records.filter(r=>r.contactId===contactId).length; if(rec.studies>0)c.lessonStatus='レッスン中';}} save(); resetForm(); alert(editingId?'更新しました':'保存しました');};
- $('#cancelEditBtn').onclick=resetForm; $('#contactSearch').oninput=renderContacts; $('#mapStatus').onchange=renderMap; $('#saveBaselineBtn').onclick=saveBaselineForm;
+ $('#cancelEditBtn').onclick=resetForm; $('#contactSearch').oninput=renderContacts; $('#mapStatus').onchange=renderMap; $('#saveBaselineBtn').onclick=saveBaselineForm; if($('#repairTotalsBtn')) $('#repairTotalsBtn').onclick=()=>{if(confirm('奉仕年度の初期値をバックアップ基準（通常400:00・付加69:00・レッスン2）に戻し、重複記録を整理します。よろしいですか？')){repairKnownTotals(); alert('累計を修正しました。同期済みならクラウドにも保存されます。');}};
  $('#importBtn').onclick=()=>$('#importFile').click(); $('#importFile').onchange=async e=>{const f=e.target.files&&e.target.files[0]; if(!f)return; try{const imported=JSON.parse(await f.text()); const merged=mergeState(state,imported); if(confirm('バックアップを取り込み、現在のデータと統合しますか？')){state=normalizeState(merged); persist(); renderAll(); alert('バックアップを取り込みました');}}catch(err){alert('読み込みに失敗しました：'+err.message);}finally{e.target.value='';}};
  $('#exportBtn').onclick=()=>{let blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='service-record-backup.json'; a.click();};
  $('#exportCsvBtn').onclick=()=>{let head=['日付','区分','通常時間','付加的時間','区域','ブロック','名前','性別','年代','住所','ステータス','次回予定','再訪問','レッスン','メモ']; let rows=state.records.map(r=>{let c=state.contacts.find(x=>x.id===r.contactId)||{}; return [r.date,r.activityType,fmt(r.serviceMinutes),fmt(r.extraMinutes),r.territory,r.block,c.name||'',c.gender||r.gender,c.ageBand||r.ageBand,c.address||'',c.status||'',c.nextDate||'',r.returnVisits,r.studies,r.memo].map(v=>`"${String(v||'').replaceAll('"','""')}"`).join(',')}); let blob=new Blob(['\ufeff'+head.join(',')+'\n'+rows.join('\n')],{type:'text/csv'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='service-record.csv'; a.click();};
