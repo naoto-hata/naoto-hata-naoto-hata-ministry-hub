@@ -1,126 +1,78 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store">
   <title>奉仕記録</title>
-  <link rel="stylesheet" href="styles.css?v=14" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#2563eb" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 <header class="app-header">
-  <div><h1>奉仕記録</h1><p>時間・区域・配布物・動画・再訪問マップ</p></div>
-  <div class="top-actions"><button id="exportCsvBtn" class="ghost">CSV</button><button id="importBtn" class="ghost">復元</button><button id="exportBtn" class="ghost">バックアップ</button><input id="importFile" type="file" accept="application/json" hidden></div>
+  <div><h1>奉仕記録</h1><p>時間・区域・配布物・動画・再訪問・レッスン</p></div>
+  <div class="header-actions">
+    <button id="exportCsvBtn">CSV</button><button id="importBtn">復元</button><button id="exportBtn">バックアップ</button>
+    <input type="file" id="importFile" accept=".json" hidden>
+  </div>
 </header>
-<main>
-  <section class="dashboard cards">
-    <div class="card"><span>今月の通常奉仕</span><strong id="monthService">0:00</strong></div>
-    <div class="card"><span>付加的奉仕</span><strong id="monthExtra">0:00</strong></div>
-    <div class="card"><span>合計</span><strong id="monthTotal">0:00</strong></div>
-    <div class="card"><span>再訪問地点</span><strong id="rvCount">0</strong></div>
-    <div class="card accent"><span>奉仕年度 通常</span><strong id="yearService">0:00</strong></div>
-    <div class="card accent"><span>奉仕年度 付加</span><strong id="yearExtra">0:00</strong></div>
-    <div class="card accent"><span>奉仕年度 合計</span><strong id="yearTotal">0:00</strong></div>
+<main class="wrap">
+  <section class="stats">
+    <div class="stat"><span>今月の通常奉仕</span><b id="statMonthService">0:00</b></div>
+    <div class="stat"><span>今月の付加的奉仕</span><b id="statMonthExtra">0:00</b></div>
+    <div class="stat"><span>今月 合計</span><b id="statMonthTotal">0:00</b></div>
+    <div class="stat"><span>再訪問先</span><b id="statContacts">0</b></div>
+    <div class="stat blue"><span>奉仕年度 通常</span><b id="statYearService">0:00</b></div>
+    <div class="stat blue"><span>奉仕年度 付加</span><b id="statYearExtra">0:00</b></div>
+    <div class="stat blue"><span>奉仕年度 合計</span><b id="statYearTotal">0:00</b></div>
   </section>
   <nav class="tabs">
-    <button class="tab active" data-view="record">記録</button>
-    <button class="tab" data-view="baseline">奉仕年度</button>
-    <button class="tab" data-view="sync">同期</button>
-    <button class="tab" data-view="history">履歴</button>
-    <button class="tab" data-view="library">出版物・動画</button>
-    <button class="tab" data-view="map">再訪問マップ</button>
-    <button class="tab" data-view="stats">集計</button>
+    <button data-tab="record" class="active">記録</button><button data-tab="year">奉仕年度</button><button data-tab="sync">同期</button><button data-tab="history">履歴</button><button data-tab="contacts">再訪問・レッスン</button><button data-tab="library">出版物・動画</button><button data-tab="map">再訪問マップ</button><button data-tab="summary">集計</button>
   </nav>
 
-  <section id="baseline" class="view">
-    <div class="panel">
-      <h2>今奉仕年度の初期累計</h2>
-      <p class="muted">このアプリを使い始める前の累計です。9月から今日までの既存記録をここに入れておくと、奉仕年度集計に合算されます。</p>
-      <div class="grid two">
-        <label>奉仕年度開始日<input type="date" id="baselineStart"></label>
-        <label>メモ<input id="baselineNote" placeholder="例 9月〜6月18日まで"></label>
-      </div>
-      <h3>通常奉仕</h3>
-      <div class="baseline-time">
-        <label>時間<div class="stepper"><button type="button" data-step="baselineServiceHours" data-delta="-1">−</button><input id="baselineServiceHours" type="number" min="0" inputmode="numeric"><button type="button" data-step="baselineServiceHours" data-delta="1">＋</button></div></label>
-        <label>分<div class="stepper"><button type="button" data-step="baselineServiceMinutes" data-delta="-10">−10</button><input id="baselineServiceMinutes" type="number" min="0" max="59" inputmode="numeric"><button type="button" data-step="baselineServiceMinutes" data-delta="10">＋10</button></div></label>
-      </div>
-      <h3>付加的奉仕</h3>
-      <div class="baseline-time">
-        <label>時間<div class="stepper"><button type="button" data-step="baselineExtraHours" data-delta="-1">−</button><input id="baselineExtraHours" type="number" min="0" inputmode="numeric"><button type="button" data-step="baselineExtraHours" data-delta="1">＋</button></div></label>
-        <label>分<div class="stepper"><button type="button" data-step="baselineExtraMinutes" data-delta="-10">−10</button><input id="baselineExtraMinutes" type="number" min="0" max="59" inputmode="numeric"><button type="button" data-step="baselineExtraMinutes" data-delta="10">＋10</button></div></label>
-      </div>
-      <div class="grid two">
-        <label>再訪問件数<input id="baselineReturnVisits" type="number" min="0" inputmode="numeric"></label>
-        <label>レッスン件数<input id="baselineStudies" type="number" min="0" inputmode="numeric"></label>
-      </div>
-      <button type="button" id="saveBaselineBtn" class="primary">奉仕年度累計を保存</button>
-      <p class="muted">スクショから読み取れた分は、通常奉仕 403時間05分 として入れてあります。必要ならここで直せます。</p>
+  <section id="tab-record" class="panel active">
+    <h2>今日の記録</h2>
+    <div class="grid2">
+      <label>日付<input id="date" type="date"></label>
+      <label>奉仕区分<select id="activityType"><option>戸別</option><option>カート</option><option>電話</option><option>手紙</option><option>Zoom</option><option>再訪問</option><option>レッスン</option><option>王国会館メンテナンス</option><option>大会奉仕</option><option>その他</option></select></label>
+      <label>区域 #3桁<input id="territory" placeholder="例 125" inputmode="numeric" maxlength="3"></label>
+      <label>ブロック<select id="block"><option value="">なし</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></label>
     </div>
-  </section>
-  <section id="record" class="view active">
-    <form id="recordForm" class="panel">
-      <input type="hidden" id="editingId">
-      <h2 id="formTitle">今日の記録</h2>
-      <div class="grid two">
-        <label>日付<input type="date" id="date" required></label>
-        <label>奉仕区分<select id="activityType"><option value="戸別">戸別</option><option value="カート">カート</option><option value="手紙">手紙</option><option value="電話">電話</option><option value="Zoom">Zoom</option><option value="再訪問">再訪問</option><option value="聖書レッスン">聖書レッスン</option><option value="王国会館メンテナンス" data-extra="true">王国会館メンテナンス</option><option value="大会奉仕" data-extra="true">大会奉仕</option><option value="災害支援" data-extra="true">災害支援</option><option value="その他付加的奉仕" data-extra="true">その他付加的奉仕</option></select></label>
-        <label>区域 #3桁<input id="territory" maxlength="3" inputmode="numeric" placeholder="例 125"></label>
-        <label>ブロック<select id="block"><option value="">なし</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></label>
-      </div>
-      <div class="time-box"><button type="button" id="minus10">−10分</button><strong id="timeDisplay">0:00</strong><button type="button" id="plus10">＋10分</button></div>
-      <div class="grid two"><label>名前・ニックネーム<input id="contactName" placeholder="例 山田さん"></label><label>住宅名・部屋番号<input id="building" placeholder="例 サンハイツ203"></label></div>
-      <div class="location-box"><label>住所<input id="address" placeholder="現在地から取得、または手入力"></label><div class="button-row"><button type="button" id="locateBtn">📍 現在地から住所入力</button><button type="button" id="openMapBtn" class="ghost">Google Mapで開く</button></div><input type="hidden" id="lat"><input type="hidden" id="lng"></div>
-      <div class="grid two"><label>再訪問ステータス<select id="rvStatus"><option>関心あり</option><option>再訪問予定</option><option>レッスン中</option><option>保留</option><option>終了</option></select></label><label>次回予定日<input type="date" id="nextDate"></label></div>
-      <label class="check"><input type="checkbox" id="saveReturnVisit"> 再訪問地点に登録</label>
-      <h3>関心テーマ</h3><div class="chips"><label><input type="checkbox" name="topic" value="家族">家族</label><label><input type="checkbox" name="topic" value="健康">健康</label><label><input type="checkbox" name="topic" value="老後">老後</label><label><input type="checkbox" name="topic" value="聖書">聖書</label><label><input type="checkbox" name="topic" value="世界情勢">世界情勢</label><label><input type="checkbox" name="topic" value="死者の復活">死者の復活</label><label><input type="checkbox" name="topic" value="神の王国">神の王国</label></div>
-      <h3>配布物</h3><div id="selectedPubs" class="selected-list"></div><button type="button" class="ghost" data-open-picker="publication">＋ 配布物を追加</button>
-      <h3>動画</h3><div id="selectedVideos" class="selected-list"></div><button type="button" class="ghost" data-open-picker="video">＋ 動画を追加</button>
-      <div class="grid two"><label>再訪問件数<input id="returnVisits" type="number" min="0" value="0"></label><label>レッスン件数<input id="studies" type="number" min="0" value="0"></label></div>
-      <label>メモ<textarea id="memo" rows="3" placeholder="会話・次回予定など"></textarea></label>
-      <button class="primary" id="saveBtn" type="submit">保存</button><button class="ghost" id="cancelEditBtn" type="button" hidden>編集をキャンセル</button>
-    </form>
+    <label>再訪問先を選択<select id="contactSelect"><option value="">新規・選択なし</option></select></label>
+    <div class="timebox"><span>通常奉仕</span><button data-min="-10" data-target="serviceMinutes">−10分</button><b id="serviceTime">0:00</b><button data-min="10" data-target="serviceMinutes">＋10分</button><button data-min="30" data-target="serviceMinutes">＋30分</button><button data-min="60" data-target="serviceMinutes">＋1時間</button></div>
+    <div class="timebox extra"><span>付加的奉仕</span><button data-min="-10" data-target="extraMinutes">−10分</button><b id="extraTime">0:00</b><button data-min="10" data-target="extraMinutes">＋10分</button><button data-min="30" data-target="extraMinutes">＋30分</button><button data-min="60" data-target="extraMinutes">＋1時間</button></div>
+    <h3>再訪問先・人物情報</h3>
+    <div class="grid2">
+      <label>名前・ニックネーム<input id="contactName" placeholder="例 山田さん"></label>
+      <label>住宅名・部屋番号<input id="building" placeholder="例 サンハイツ203"></label>
+    </div>
+    <label>住所<input id="address" placeholder="住所を入力するとピン化できます"></label>
+    <div class="row"><button id="geoBtn">📍 現在地から住所入力</button><button id="addressPinBtn">住所からピン作成</button><button id="mapOpenBtn">Google Mapで開く</button></div>
+    <div class="grid2">
+      <label>性別<select id="gender"><option value="">未選択</option><option>男性</option><option>女性</option><option>不明</option></select></label>
+      <label>年代<select id="ageGroup"><option value="">未選択</option><option>10代前半</option><option>10代後半</option><option>20代前半</option><option>20代後半</option><option>30代前半</option><option>30代後半</option><option>40代</option><option>50代</option><option>60代</option><option>70代</option><option>80代以上</option><option>不明</option></select></label>
+      <label>再訪問ステータス<select id="rvStatus"><option>関心あり</option><option>再訪問予定</option><option>レッスン中</option><option>保留</option><option>終了</option></select></label>
+      <label>次回予定日<input id="nextDate" type="date"></label>
+      <label>レッスン状態<select id="lessonStatus"><option>未開始</option><option>提案中</option><option>レッスン中</option><option>休止</option><option>終了</option></select></label>
+      <label>教材・課<input id="lessonInfo" placeholder="例 いつまでも幸せ 第3課"></label>
+    </div>
+    <label>関心テーマ</label><div id="topicChecks" class="chips"></div>
+    <label>メモ<textarea id="memo" rows="4"></textarea></label>
+    <div class="row"><button class="primary" id="saveRecordBtn">保存</button><button id="clearBtn">クリア</button></div>
   </section>
 
-  <section id="sync" class="view">
-    <div class="panel">
-      <h2>スマホ・PC同期</h2>
-      <p class="muted">GoogleログインでFirebaseに同期します。今この端末に入っている記録は、初回ログイン時にクラウドへ引き継がれます。</p>
-      <div id="syncStatus" class="sync-status">未設定</div>
-      <div class="button-row">
-        <button type="button" id="googleLoginBtn" class="primary small-primary">Googleでログイン</button>
-        <button type="button" id="googleLogoutBtn" class="ghost" hidden>ログアウト</button>
-        <button type="button" id="cloudUploadBtn" class="ghost">この端末のデータをクラウドへ保存</button>
-        <button type="button" id="repairTotalsBtn" class="ghost danger">累計と重複を修正</button>
-      </div>
-      <details class="firebase-box">
-        <summary>Firebase設定</summary>
-        <p class="muted">FirebaseのWebアプリ設定を貼り付けて保存してください。例：{ apiKey: "...", authDomain: "...", projectId: "..." }</p>
-        <textarea id="firebaseConfigInput" rows="8" placeholder='{
-  "apiKey": "...",
-  "authDomain": "...firebaseapp.com",
-  "projectId": "...",
-  "storageBucket": "...appspot.com",
-  "messagingSenderId": "...",
-  "appId": "..."
-}'></textarea>
-        <button type="button" id="saveFirebaseConfigBtn" class="ghost">Firebase設定を保存</button>
-      </details>
-      <p class="muted">※ Googleログインを使うには、Firebase側で Authentication の Googleプロバイダと Firestore Database を有効にしてください。</p>
-    </div>
-  </section>
-  <section id="history" class="view"><div class="panel"><h2>記録履歴</h2><input id="historySearch" placeholder="検索"><div id="historyList"></div></div></section>
-  <section id="library" class="view"><div class="panel"><h2>出版物・動画</h2><div class="tabs small"><button class="lib-tab active" data-lib="favorite">★ よく使う</button><button class="lib-tab" data-lib="recent">最近使った</button><button class="lib-tab" data-lib="all">すべて</button></div><div id="libraryGrid" class="item-grid"></div><p class="asset-note">サムネイルはアプリ内に埋め込み済みです。タイトルと画像の対応を確認済みです。</p></div></section>
-  <section id="map" class="view"><div class="panel"><h2>再訪問マップ</h2><div class="grid three"><label>区域<input id="mapTerritory" placeholder="125"></label><label>ブロック<select id="mapBlock"><option value="">全て</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></label><label>ステータス<select id="mapStatus"><option value="">全て</option><option>関心あり</option><option>再訪問予定</option><option>レッスン中</option><option>保留</option><option>終了</option></select></label></div><div id="mapCanvas"></div><div id="rvList"></div></div></section>
-  <section id="stats" class="view"><div class="panel"><h2>集計</h2><div id="statsContent"></div></div></section>
+  <section id="tab-year" class="panel"><h2>奉仕年度 初期累計</h2><p class="note">9月〜アプリ開始前など、履歴に入れない累計を入れます。</p><div class="grid2"><label>開始日<input id="baseStart" type="date"></label><label>通常奉仕 分<input id="baseService" type="number"></label><label>付加的奉仕 分<input id="baseExtra" type="number"></label><label>レッスン件数<input id="baseStudies" type="number"></label></div><button id="saveBaselineBtn">奉仕年度累計を保存</button></section>
+  <section id="tab-sync" class="panel"><h2>スマホ・PC同期</h2><div class="status" id="syncStatus">未設定</div><div class="row"><button id="googleLoginBtn">Googleでログイン</button><button id="googleLogoutBtn" hidden>ログアウト</button><button id="cloudPullBtn">クラウドから取得して統合</button><button id="cloudUploadBtn">この端末のデータをクラウドへ保存</button></div><details><summary>Firebase設定</summary><textarea id="firebaseConfigInput" rows="8"></textarea><button id="saveFirebaseConfigBtn">Firebase設定を保存</button></details><p class="note">空データで上書きしないよう、クラウド保存は手動確認式にしています。</p></section>
+  <section id="tab-history" class="panel"><h2>記録履歴</h2><input id="historySearch" placeholder="検索"><div id="historyList"></div></section>
+  <section id="tab-contacts" class="panel"><h2>再訪問先・レッスン管理</h2><input id="contactSearch" placeholder="名前・住所・テーマで検索"><div id="contactList"></div></section>
+  <section id="tab-library" class="panel"><h2>出版物・動画</h2><div class="row"><button data-lib="all">全て</button><button data-lib="publication">出版物</button><button data-lib="video">動画</button><button data-lib="favorite">よく使う</button></div><div id="libraryGrid" class="cards"></div></section>
+  <section id="tab-map" class="panel"><h2>再訪問マップ</h2><p class="note">住所からピン作成した再訪問先が表示されます。</p><div id="mapCanvas"></div></section>
+  <section id="tab-summary" class="panel"><h2>集計</h2><div id="summaryBox"></div></section>
 </main>
-<dialog id="picker"><div class="picker-head"><h2 id="pickerTitle">選択</h2><button id="closePicker" class="ghost">閉じる</button></div><input id="pickerSearch" placeholder="検索"><div class="tabs small"><button class="picker-tab active" data-filter="favorite">★ よく使う</button><button class="picker-tab" data-filter="recent">最近使った</button><button class="picker-tab" data-filter="all">すべて</button></div><div id="pickerGrid" class="item-grid"></div></dialog>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-<script src="app.js?v=14"></script>
-</body>
-</html>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js?v=15"></script>
+</body></html>
