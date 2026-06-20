@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ministry Hub Final Safe</title>
-<link rel="stylesheet" href="styles.css?v=safe1">
+<title>Ministry Hub Library Redesign</title>
+<link rel="stylesheet" href="styles.css?v=library-redesign1">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
@@ -58,6 +58,6 @@
   <section id="tab-baseline" class="panel"><div class="card"><h2>奉仕年度 初期累計</h2><p class="muted">ここまでの累計を保持する欄です。既定値として通常424:20、付加71:00を入れています。</p><div class="grid three"><label>開始日<input id="baseStart" type="date"></label><label>通常<input id="baseNormal" placeholder="424:20"></label><label>付加<input id="baseExtra" placeholder="71:00"></label></div><label>メモ<input id="baseNote"></label><button id="saveBaseBtn" class="primary">初期累計を保存</button></div></section>
   <section id="tab-sync" class="panel"><div class="card"><h2>スマホ・PC同期</h2><div id="syncStatus" class="status">未接続</div><div class="actions"><button id="loginBtn" class="primary">Googleでログイン</button><button id="logoutBtn" hidden>ログアウト</button><button id="cloudPullBtn" class="secondary">クラウドから読み込む</button><button id="cloudPushBtn" class="primary">この端末のデータをクラウドへ保存</button></div><details><summary>Firebase設定</summary><textarea id="firebaseConfig" rows="8"></textarea><button id="saveFirebaseBtn">Firebase設定を保存</button></details><p class="muted">PCで整えてクラウドへ保存、スマホでクラウドから読み込み、の順です。</p></div></section>
 </main>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="app.js?v=safefix1"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="app.js?v=library-redesign1"></script>
 </body>
 </html>

@@ -1,12 +1,14 @@
-# Ministry Hub Final Safe
+# Ministry Hub Library Redesign
 
-人物管理・通常奉仕/付加奉仕・配布物/動画サムネイル・地図・Firebase同期を統合した版です。
+ライブラリ部分を再設計した版です。
 
-公開手順:
-1. GitHubで新規リポジトリを作成
-2. ZIPの中身をすべてアップロード
-3. Settings > Pages > Deploy from a branch > main / root
-4. PCで確認し、同期タブからクラウドへ保存
-5. スマホで同じGoogleアカウントでログインし、クラウドから読み込み
+- 配布物・動画・ホワイトボードのサムネイルを `app.js` に埋め込み済み
+- `assets/thumbs` や日本語フォルダの公開パスに依存しません
+- GitHub Pagesで画像フォルダが読めなくてもサムネイルが表示されます
+- 既存の localStorage / Firebase データ構造は維持します
 
-初期累計は通常424:20、付加71:00を既定値にしています。必要なら「奉仕年度」タブで修正してください。
+アップロード方法:
+1. ZIPを解凍
+2. 中身をリポジトリ直下へ全部上書き
+3. Commit
+4. Pages反映後、`?v=library-redesign1` を付けて確認
