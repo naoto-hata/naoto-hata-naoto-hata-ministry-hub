@@ -1,19 +1,12 @@
-# ministry-hub-next
+# Ministry Hub Final Safe
 
-人物管理中心の奉仕記録アプリです。
+人物管理・通常奉仕/付加奉仕・配布物/動画サムネイル・地図・Firebase同期を統合した版です。
 
-## 使い始め
-1. このフォルダの中身を GitHub Pages 用リポジトリ直下へアップロード
-2. Pages を main / root に設定
-3. PCで開いて、同期タブから必要に応じてクラウドから読み込み
+公開手順:
+1. GitHubで新規リポジトリを作成
+2. ZIPの中身をすべてアップロード
+3. Settings > Pages > Deploy from a branch > main / root
+4. PCで確認し、同期タブからクラウドへ保存
+5. スマホで同じGoogleアカウントでログインし、クラウドから読み込み
 
-## データ引き継ぎ
-- 旧localStorage: ministryHubPeopleV17 / ministryHubV3 / serviceApp などを自動移行
-- 旧Firebase: 同期タブの「旧クラウドから取り込む」
-- JSON: 右上の「復元」
-
-
-## Rebuild v3
-- 動画・ホワイトボードを大幅追加
-- 動画にもサムネイル（内蔵SVG）を表示
-- 人物ごとの配布物・動画履歴は維持
+初期累計は通常424:20、付加71:00を既定値にしています。必要なら「奉仕年度」タブで修正してください。
