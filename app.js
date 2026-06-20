@@ -74,18 +74,35 @@ function renderLibrary(){let grid=$('#libraryGrid'); if(!grid) return; let arr=[
 function recordTitle(r){return `${r.date||''}　${r.territory||''}${r.block?'-'+r.block:''}　${r.activityType||''}　${fmt(r.minutes)}`}
 function renderHistory(){let box=$('#historyList'); if(!box) return; let q=($('#historySearch')?.value||'').toLowerCase(); let arr=[...state.records].sort((a,b)=>(b.date||'').localeCompare(a.date||'')); if(q) arr=arr.filter(r=>JSON.stringify(r).toLowerCase().includes(q)); box.innerHTML=arr.map(r=>`<div class="hist-card"><div><b>${safe(recordTitle(r))}</b><br><span>${safe([r.contactName,r.building,r.address].filter(Boolean).join(' / '))}</span><br><small>${safe(r.memo||'')}</small></div><div class="hist-actions"><button type="button" data-edit-record="${r.id}">編集</button><button type="button" data-delete-record="${r.id}" class="danger">削除</button></div></div>`).join('')||'<p>記録はまだありません。</p>';}
 
-function recordsForStats(){
-  const seen=new Set();
-  return (state.records||[]).filter(r=>{
-    if(!r) return false;
-    const key = r.id || [r.date,r.activityType,r.extra?'1':'0',r.minutes,r.territory,r.block,r.contactName,r.building,r.address,r.memo].join('|');
-    if(seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+function recordSignature(r){
+  if(!r) return '';
+  const pubs=JSON.stringify(r.publications||{});
+  const vids=JSON.stringify(r.videos||{});
+  const topics=JSON.stringify(r.topics||[]);
+  return [
+    r.date||'', r.activityType||'', r.extra?'1':'0', +r.minutes||0,
+    r.territory||'', r.block||'', r.contactName||'', r.building||'',
+    r.address||'', r.lat||'', r.lng||'', r.returnVisitPoint?'1':'0',
+    r.rvStatus||'', r.nextDate||'', topics, pubs, vids,
+    +r.returnVisits||0, +r.studies||0, r.memo||''
+  ].join('|');
 }
+function uniqueRecords(records){
+  const seen=new Set(), out=[];
+  (records||[]).forEach(r=>{
+    if(!r) return;
+    const key=recordSignature(r);
+    if(seen.has(key)) return;
+    seen.add(key); out.push(r);
+  });
+  return out;
+}
+function recordsForStats(){ return uniqueRecords(state.records||[]); }
 function repairTotalsBaseline(){
-  if(!confirm('奉仕年度の初期累計を、通常400:00・付加69:00・レッスン2に戻します。日々の履歴は消しません。よろしいですか？')) return;
+  if(!confirm('重複して取り込まれた同一記録を整理し、奉仕年度の初期累計を通常400:00・付加69:00・レッスン2に戻します。日々の履歴は消しません。よろしいですか？')) return;
+  const before=(state.records||[]).length;
+  state.records=uniqueRecords(state.records||[]);
+  const after=state.records.length;
   state.baseline = {
     ...(state.baseline||{}),
     start: '2025-09-01',
@@ -97,7 +114,7 @@ function repairTotalsBaseline(){
   };
   persist();
   renderAll();
-  alert('累計を修正しました。必要なら同期タブの「この端末のデータをクラウドへ保存」でクラウドにも反映してください。');
+  alert(`修正しました。重複記録 ${before-after} 件を整理しました。表示を確認してから、必要なら同期タブの「この端末のデータをクラウドへ保存」でクラウドにも反映してください。`);
 }
 
 function renderStats(){let box=$('#statsContent'); if(!box) return; let service=0, extra=0, pubs={}, vids={}, territory={}; recordsForStats().forEach(r=>{if(r.extra){extra+=(+r.minutes||0)}else{service+=(+r.minutes||0)}; Object.entries(r.publications||{}).forEach(([id,c])=>pubs[id]=(pubs[id]||0)+(+c||0)); Object.entries(r.videos||{}).forEach(([id,c])=>vids[id]=(vids[id]||0)+(+c||0)); if(r.territory){let key=`${r.territory}${r.block?'-'+r.block:''}`; territory[key]=(territory[key]||0)+1;}});
