@@ -11,3 +11,9 @@
 - 旧localStorage: ministryHubPeopleV17 / ministryHubV3 / serviceApp などを自動移行
 - 旧Firebase: 同期タブの「旧クラウドから取り込む」
 - JSON: 右上の「復元」
+
+
+## Rebuild v3
+- 動画・ホワイトボードを大幅追加
+- 動画にもサムネイル（内蔵SVG）を表示
+- 人物ごとの配布物・動画履歴は維持
