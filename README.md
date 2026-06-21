@@ -1,3 +1,1 @@
-# Ministry Hub final cache bypass
-
-app2.jsを読む版。日付は日本ローカル日付。ライブラリ画像はdata:image埋め込みを使用。
+Ministry Hub 完全1ファイル版。index.html内にCSSとアプリ本体を埋め込み済み。サムネイルは外部画像フォルダ不要です。
